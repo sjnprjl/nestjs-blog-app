@@ -30,12 +30,23 @@ export class UsersService {
 
     const hashed = await argon.hash(createUserDto.password);
     createUserDto.password = hashed;
-    return await this.userRepository.save(createUserDto);
+    await this.userRepository.save(createUserDto);
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
     const user = await this.findOneBy({ id });
     Object.assign(user, updateUserDto);
     return await this.userRepository.save(user);
+  }
+
+  async verifyUser(usernameOrEmail: string, plainPassword: string) {
+    const user = await this.findOneBy([
+      { email: usernameOrEmail },
+      { username: usernameOrEmail },
+    ]);
+    if (!user) throw new BadRequestException('user is not found.');
+    const isVerified = await argon.verify(user.password, plainPassword);
+    if (isVerified) return user;
+    throw new BadRequestException('password does not match.');
   }
 }
