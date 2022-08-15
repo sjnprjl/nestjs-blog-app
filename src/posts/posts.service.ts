@@ -43,11 +43,12 @@ export class PostsService {
 
   async update(id: string, updatePostDto: UpdatePostDto) {
     const post = await this.findOne(id);
+    if (!post) throw new BadRequestException('post not found.');
+
     let slug = null;
     if (updatePostDto.title && post.title !== updatePostDto.title)
       slug = await this.createUniqueSlug(updatePostDto.title);
 
-    if (!post) throw new BadRequestException('post not found.');
     Object.assign(post, updatePostDto);
     slug && (post.slug = slug);
 
