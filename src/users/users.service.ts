@@ -1,0 +1,41 @@
+import { BadRequestException, Injectable } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { FindOptionsWhere, Repository } from 'typeorm';
+import { CreateUserDto } from './dto/create-user.dto';
+import { User } from './entities/users.entity';
+import * as argon from 'argon2';
+import { UpdateUserDto } from './dto/update-user.dto';
+
+@Injectable()
+export class UsersService {
+  constructor(
+    @InjectRepository(User)
+    private readonly userRepository: Repository<User>,
+  ) {}
+
+  async findOneBy(where: FindOptionsWhere<User> | FindOptionsWhere<User>[]) {
+    const user = await this.userRepository.findOne({ where });
+    return user;
+  }
+
+  async create(createUserDto: CreateUserDto) {
+    const user = await this.findOneBy([
+      { email: createUserDto.email },
+      { username: createUserDto.username },
+    ]);
+    if (user)
+      throw new BadRequestException(
+        'user with similar username or email exist.',
+      );
+
+    const hashed = await argon.hash(createUserDto.password);
+    createUserDto.password = hashed;
+    return await this.userRepository.save(createUserDto);
+  }
+
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    const user = await this.findOneBy({ id });
+    Object.assign(user, updateUserDto);
+    return await this.userRepository.save(user);
+  }
+}
