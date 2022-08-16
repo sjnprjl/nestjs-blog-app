@@ -1,24 +1,27 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
-import { CreatePostDto } from './dto/create-post.dto';
-import { Post } from './entities/posts.entity';
-
 import slugify from 'slugify';
+import { FindOptionsWhere, Repository } from 'typeorm';
+
+import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
+import { Post } from './entities/posts.entity';
 
 @Injectable()
 export class PostsService {
   constructor(
-    @InjectRepository(Post)
-    private readonly postRepository: Repository<Post>,
+    @InjectRepository(Post) private readonly postRepository: Repository<Post>,
   ) {}
   async findAll() {
     return await this.postRepository.find();
   }
 
   async findOne(id: string) {
-    return await this.postRepository.findOne({ where: { id } });
+    return await this.findOneBy({ id });
+  }
+
+  async findOneBy(where: FindOptionsWhere<Post> | FindOptionsWhere<Post>[]) {
+    return await this.postRepository.findOne({ where });
   }
 
   private async createUniqueSlug(title: string) {
@@ -27,7 +30,8 @@ export class PostsService {
     const isPostExist = await this.findOneBySlug(slug);
 
     if (isPostExist)
-      throw new BadRequestException('post with similar title already exist'); // throw error if post already exist
+      throw new BadRequestException('post with similar title already exist'); // throw error if post
+    // already exist
 
     return slug;
   }
@@ -41,8 +45,8 @@ export class PostsService {
     return await this.postRepository.findOne({ where: { slug } }); // check if post already exist
   }
 
-  async update(id: string, updatePostDto: UpdatePostDto) {
-    const post = await this.findOne(id);
+  async update(id: string, userId: string, updatePostDto: UpdatePostDto) {
+    const post = await this.findOneBy({ id, userId });
     if (!post) throw new BadRequestException('post not found.');
 
     let slug = null;
