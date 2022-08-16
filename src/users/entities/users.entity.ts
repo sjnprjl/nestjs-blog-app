@@ -1,4 +1,5 @@
 import { Exclude } from 'class-transformer';
+import { PostComment } from 'src/comments/entities/comments.entity';
 import { Post } from 'src/posts/entities/posts.entity';
 import {
   Column,
@@ -41,6 +42,9 @@ export class User implements IUser {
 
   @OneToMany(() => Post, (post) => post.user)
   posts: Post[];
+
+  @OneToMany(() => PostComment, (postComment) => postComment.user)
+  comments: PostComment[];
 
   @Column({ enum: UserRole, default: UserRole.normal })
   role: UserRole;
