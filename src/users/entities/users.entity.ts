@@ -16,6 +16,11 @@ export interface IUser {
   email: string;
 }
 
+export enum UserRole {
+  normal = 'normal',
+  admin = 'admin',
+}
+
 @Entity('users')
 export class User implements IUser {
   @PrimaryGeneratedColumn('uuid')
@@ -36,6 +41,9 @@ export class User implements IUser {
 
   @OneToMany(() => Post, (post) => post.user)
   posts: Post[];
+
+  @Column({ enum: UserRole, default: UserRole.normal })
+  role: UserRole;
 
   @CreateDateColumn()
   createdAt: Date;
