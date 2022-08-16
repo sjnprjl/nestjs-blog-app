@@ -55,7 +55,7 @@ export class PostsService {
     return await this.postRepository.save(post);
   }
 
-  async delete(id: string) {
-    return await this.postRepository.delete(id);
+  async delete(userId: string, id: string) {
+    return await this.postRepository.delete({ id, userId });
   }
 }
