@@ -32,9 +32,9 @@ export class PostsService {
     return slug;
   }
 
-  async create(createPostDto: CreatePostDto) {
+  async create(userId: string, createPostDto: CreatePostDto) {
     const slug = await this.createUniqueSlug(createPostDto.title);
-    return await this.postRepository.save({ ...createPostDto, slug }); // create post and return response
+    return await this.postRepository.save({ ...createPostDto, slug, userId }); // create post and return response
   }
 
   async findOneBySlug(slug: string) {
