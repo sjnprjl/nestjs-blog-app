@@ -1,8 +1,10 @@
-import { Exclude, Expose } from 'class-transformer';
+import { User } from 'src/users/entities/users.entity';
 import {
   Column,
   CreateDateColumn,
   Entity,
+  JoinColumn,
+  ManyToOne,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -18,6 +20,13 @@ export class Post {
   @Column()
   slug: string;
 
+  @Column()
+  userId: string;
+
+  @ManyToOne(() => User, (user) => user.posts)
+  @JoinColumn({ name: 'userId' })
+  user: User;
+
   @Column('text')
   description: string;
 
@@ -27,4 +36,3 @@ export class Post {
   @UpdateDateColumn()
   updatedAt: Date;
 }
-
