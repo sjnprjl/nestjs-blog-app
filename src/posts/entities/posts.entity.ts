@@ -1,3 +1,4 @@
+import { PostComment } from 'src/comments/entities/comments.entity';
 import { User } from 'src/users/entities/users.entity';
 import {
   Column,
@@ -5,6 +6,7 @@ import {
   Entity,
   JoinColumn,
   ManyToOne,
+  OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
@@ -26,6 +28,9 @@ export class Post {
   @ManyToOne(() => User, (user) => user.posts)
   @JoinColumn({ name: 'userId' })
   user: User;
+
+  @OneToMany(() => PostComment, (postComment) => postComment.post)
+  comments: PostComment[];
 
   @Column('text')
   description: string;
