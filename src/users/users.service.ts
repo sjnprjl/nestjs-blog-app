@@ -30,7 +30,9 @@ export class UsersService {
 
     const hashed = await argon.hash(createUserDto.password);
     createUserDto.password = hashed;
-    await this.userRepository.save(createUserDto);
+    const response = await this.userRepository.save(createUserDto);
+    delete response.password;
+    return response;
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
