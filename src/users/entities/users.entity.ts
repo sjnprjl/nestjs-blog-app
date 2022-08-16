@@ -37,6 +37,7 @@ export class User implements IUser {
   @Column()
   password: string;
 
+  @Exclude()
   @Column({ unique: true })
   email: string;
 
@@ -46,12 +47,15 @@ export class User implements IUser {
   @OneToMany(() => PostComment, (postComment) => postComment.user)
   comments: PostComment[];
 
+  @Exclude()
   @Column({ enum: UserRole, default: UserRole.normal })
   role: UserRole;
 
+  @Exclude()
   @CreateDateColumn()
   createdAt: Date;
 
+  @Exclude()
   @UpdateDateColumn()
   updatedAt: Date;
 }
