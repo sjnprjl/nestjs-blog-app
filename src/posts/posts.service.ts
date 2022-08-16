@@ -16,7 +16,7 @@ export class PostsService {
     return await this.postRepository.find();
   }
 
-  async findOne(id: string) {
+  async findOneById(id: string) {
     return await this.findOneBy({ id });
   }
 
