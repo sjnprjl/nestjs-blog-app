@@ -6,7 +6,9 @@ import {
   Param,
   Patch,
   Post,
+  UseGuards,
 } from '@nestjs/common';
+import { JwtAuthGuard } from 'src/shared/guards/jwt.guard';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostsService } from './posts.service';
@@ -15,6 +17,7 @@ import { PostsService } from './posts.service';
 export class PostsController {
   constructor(private readonly postsService: PostsService) {}
 
+  @UseGuards(JwtAuthGuard)
   @Post()
   create(@Body() createPostDto: CreatePostDto) {
     return this.postsService.create(createPostDto);
@@ -30,11 +33,13 @@ export class PostsController {
     return this.postsService.findOneBySlug(slug);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Patch('/:id')
   update(@Param('id') id: string, @Body() updatePostDto: UpdatePostDto) {
     return this.postsService.update(id, updatePostDto);
   }
 
+  @UseGuards(JwtAuthGuard)
   @Delete('/:id')
   async delete(@Param('id') id: string) {
     const deleted = await this.postsService.delete(id);
