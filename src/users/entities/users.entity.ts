@@ -5,6 +5,7 @@ import {
   Column,
   CreateDateColumn,
   Entity,
+  ManyToMany,
   OneToMany,
   PrimaryGeneratedColumn,
   UpdateDateColumn,
@@ -41,15 +42,18 @@ export class User implements IUser {
   @Column({ unique: true })
   email: string;
 
+  @Exclude()
+  @Column({ enum: UserRole, default: UserRole.normal })
+  role: UserRole;
+
   @OneToMany(() => Post, (post) => post.user)
   posts: Post[];
 
   @OneToMany(() => PostComment, (postComment) => postComment.user)
   comments: PostComment[];
 
-  @Exclude()
-  @Column({ enum: UserRole, default: UserRole.normal })
-  role: UserRole;
+  @ManyToMany(() => User)
+  friends: User[];
 
   @Exclude()
   @CreateDateColumn()
