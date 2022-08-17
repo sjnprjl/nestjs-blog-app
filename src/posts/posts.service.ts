@@ -1,7 +1,8 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import slugify from 'slugify';
-import { FindOptionsWhere, Repository } from 'typeorm';
+import { FriendsService } from 'src/users/friends/friends.service';
+import { FindOptionsWhere, In, Repository } from 'typeorm';
 
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -11,6 +12,7 @@ import { Post } from './entities/posts.entity';
 export class PostsService {
   constructor(
     @InjectRepository(Post) private readonly postRepository: Repository<Post>,
+    private readonly friendService: FriendsService,
   ) {}
   async findAll(userId: string | undefined) {
     return await this.postRepository.find({ where: { isVerified: true } });
@@ -26,6 +28,29 @@ export class PostsService {
 
   async findOneBy(where: FindOptionsWhere<Post> | FindOptionsWhere<Post>[]) {
     return await this.postRepository.findOne({ where });
+  }
+
+  async getPostOfFriends(selfId: string) {
+    console.log(selfId);
+    // naive approach
+    const friends = await this.friendService.getFriendsOf(selfId);
+    if (friends.length === 0)
+      throw new BadRequestException('no any post to show.');
+
+    const friendIds = friends.map((friend) =>
+      friend.selfId === selfId ? friend.friendId : friend.selfId,
+    );
+
+    const posts = await this.postRepository.find({
+      where: {
+        userId: In(friendIds),
+        isVerified: true,
+      },
+      order: {
+        createdAt: 'ASC',
+      },
+    });
+    return posts;
   }
 
   private async createUniqueSlug(title: string) {
