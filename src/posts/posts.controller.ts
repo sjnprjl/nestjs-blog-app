@@ -8,8 +8,11 @@ import {
   Post,
   UseGuards,
 } from '@nestjs/common';
+import { Roles } from 'src/shared/decorators/roles.decorator';
 import { GetUser } from 'src/shared/decorators/user.decorator';
 import { JwtAuthGuard } from 'src/shared/guards/jwt.guard';
+import { RolesGuard } from 'src/shared/guards/roles.guard';
+import { UserRole } from 'src/users/entities/users.entity';
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { PostsService } from './posts.service';
@@ -25,13 +28,20 @@ export class PostsController {
   }
 
   @Get()
-  getAll() {
-    return this.postsService.findAll();
+  getAll(@GetUser('id') userId: string) {
+    return this.postsService.findAll(userId);
   }
 
   @Get('/:slug')
   getBySlug(@Param('slug') slug: string) {
     return this.postsService.findOneBySlug(slug);
+  }
+
+  @Roles(UserRole.admin)
+  @UseGuards(JwtAuthGuard, RolesGuard)
+  @Patch('/:id/verify')
+  postVerify(@Param('id') id: string) {
+    return this.postsService.verifyPost(id);
   }
 
   @UseGuards(JwtAuthGuard)

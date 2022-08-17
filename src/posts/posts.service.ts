@@ -12,8 +12,12 @@ export class PostsService {
   constructor(
     @InjectRepository(Post) private readonly postRepository: Repository<Post>,
   ) {}
-  async findAll() {
-    return await this.postRepository.find();
+  async findAll(userId: string | undefined) {
+    return await this.postRepository.find({ where: { isVerified: true } });
+  }
+
+  async findOnlyVerified() {
+    return await this.postRepository.find({ where: { isVerified: true } });
   }
 
   async findOneById(id: string) {
@@ -61,5 +65,11 @@ export class PostsService {
 
   async delete(userId: string, id: string) {
     return await this.postRepository.delete({ id, userId });
+  }
+
+  async verifyPost(id: string) {
+    const post = await this.postRepository.findOne({ where: { id } });
+    post.isVerified = true;
+    return await this.postRepository.save(post);
   }
 }
