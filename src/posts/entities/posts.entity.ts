@@ -1,3 +1,4 @@
+import { Exclude } from 'class-transformer';
 import { PostComment } from 'src/comments/entities/comments.entity';
 import { User } from 'src/users/entities/users.entity';
 import {
@@ -25,15 +26,19 @@ export class Post {
   @Column()
   userId: string;
 
+  @Column('text')
+  description: string;
+
+  @Exclude()
+  @Column({ default: false })
+  isVerified: boolean;
+
   @ManyToOne(() => User, (user) => user.posts)
   @JoinColumn({ name: 'userId' })
   user: User;
 
   @OneToMany(() => PostComment, (postComment) => postComment.post)
   comments: PostComment[];
-
-  @Column('text')
-  description: string;
 
   @CreateDateColumn()
   createdAt: Date;
