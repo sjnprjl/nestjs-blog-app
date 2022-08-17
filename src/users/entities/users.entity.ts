@@ -10,6 +10,7 @@ import {
   PrimaryGeneratedColumn,
   UpdateDateColumn,
 } from 'typeorm';
+import { UserFriend } from '../friends/entities/friends.entity';
 
 export interface IUser {
   fullName: string;
@@ -52,8 +53,8 @@ export class User implements IUser {
   @OneToMany(() => PostComment, (postComment) => postComment.user)
   comments: PostComment[];
 
-  @ManyToMany(() => User)
-  friends: User[];
+  @OneToMany(() => UserFriend, (userFriend) => userFriend.self)
+  friends: UserFriend[];
 
   @Exclude()
   @CreateDateColumn()
