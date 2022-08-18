@@ -1,8 +1,9 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import slugify from 'slugify';
 import { FriendsService } from 'src/users/friends/friends.service';
-import { FindOptionsWhere, In, Repository } from 'typeorm';
+import { DeleteResult, FindOptionsWhere, In, Repository } from 'typeorm';
 
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
@@ -10,6 +11,8 @@ import { Post } from './entities/posts.entity';
 
 @Injectable()
 export class PostsService {
+  private readonly logger = new Logger(PostsService.name);
+  private readonly POST_DELETE_DAY = 5;
   constructor(
     @InjectRepository(Post) private readonly postRepository: Repository<Post>,
     private readonly friendService: FriendsService,
@@ -31,7 +34,6 @@ export class PostsService {
   }
 
   async getPostOfFriends(selfId: string) {
-    console.log(selfId);
     // naive approach
     const friends = await this.friendService.getFriendsOf(selfId);
     if (friends.length === 0)
@@ -48,6 +50,18 @@ export class PostsService {
       },
       order: {
         createdAt: 'ASC',
+      },
+      relations: ['user'],
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        description: true,
+        createdAt: true,
+        user: {
+          fullName: true,
+          username: true,
+        },
       },
     });
     return posts;
@@ -90,6 +104,31 @@ export class PostsService {
 
   async delete(userId: string, id: string) {
     return await this.postRepository.delete({ id, userId });
+  }
+
+  private dateDiffInDays(a: Date, b: Date) {
+    // Discard the time and time-zone information.
+    const _MS_PER_DAY = 1000 * 60 * 60 * 24;
+
+    const utc1 = Date.UTC(a.getFullYear(), a.getMonth(), a.getDate());
+    const utc2 = Date.UTC(b.getFullYear(), b.getMonth(), b.getDate());
+
+    return Math.floor((utc2 - utc1) / _MS_PER_DAY);
+  }
+
+  @Cron(CronExpression.EVERY_10_SECONDS)
+  async deleteUnVerifiedPost() {
+    this.logger.log('checking for unverified posts.');
+    const usersPosts = await this.postRepository.find({
+      where: { isVerified: false },
+    });
+    if (!usersPosts.length) return;
+    usersPosts.map((post) => {
+      const diff = this.dateDiffInDays(new Date(), post.createdAt);
+      if (diff >= this.POST_DELETE_DAY) {
+        return this.postRepository.delete(post.id);
+      }
+    });
   }
 
   async verifyPost(id: string) {
