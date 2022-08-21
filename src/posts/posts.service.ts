@@ -1,19 +1,27 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import {
+  BadRequestException,
+  CACHE_MANAGER,
+  Inject,
+  Injectable,
+  Logger,
+} from '@nestjs/common';
 import { Cron, CronExpression } from '@nestjs/schedule';
 import { InjectRepository } from '@nestjs/typeorm';
 import slugify from 'slugify';
 import { FriendsService } from 'src/users/friends/friends.service';
-import { DeleteResult, FindOptionsWhere, In, Repository } from 'typeorm';
+import { FindOptionsWhere, In, Repository } from 'typeorm';
 
 import { CreatePostDto } from './dto/create-post.dto';
 import { UpdatePostDto } from './dto/update-post.dto';
 import { Post } from './entities/posts.entity';
+import { Cache } from 'cache-manager';
 
 @Injectable()
 export class PostsService {
   private readonly logger = new Logger(PostsService.name);
   private readonly POST_DELETE_DAY = 5;
   constructor(
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
     @InjectRepository(Post) private readonly postRepository: Repository<Post>,
     private readonly friendService: FriendsService,
   ) {}
@@ -43,28 +51,35 @@ export class PostsService {
       friend.selfId === selfId ? friend.friendId : friend.selfId,
     );
 
-    const posts = await this.postRepository.find({
-      where: {
-        userId: In(friendIds),
-        isVerified: true,
-      },
-      order: {
-        createdAt: 'ASC',
-      },
-      relations: ['user'],
-      select: {
-        id: true,
-        title: true,
-        slug: true,
-        description: true,
-        createdAt: true,
-        user: {
-          fullName: true,
-          username: true,
+    const cachedPosts = await this.cacheManager.get('friends_post');
+    if (!cachedPosts) {
+      console.log('not cached user posts');
+      const posts = await this.postRepository.find({
+        where: {
+          userId: In(friendIds),
+          isVerified: true,
         },
-      },
-    });
-    return posts;
+        order: {
+          createdAt: 'ASC',
+        },
+        relations: ['user'],
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          description: true,
+          createdAt: true,
+          user: {
+            fullName: true,
+            username: true,
+          },
+        },
+      });
+      await this.cacheManager.set('friends_post', posts);
+      return posts;
+    }
+    console.log('returned cached posts.');
+    return cachedPosts;
   }
 
   private async createUniqueSlug(title: string) {
